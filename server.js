@@ -317,7 +317,7 @@ bot.on("photo", async (ctx) => {
     // Save to DB
     await pool.execute(
       `
-      INSERT IGNORE INTO wedding_photos_gashe
+      INSERT IGNORE INTO wedding_photos3
       (file_id, image_url, sender)
       VALUES (?, ?, ?)
       `,
@@ -346,7 +346,7 @@ bot.on("photo", async (ctx) => {
 
       // Single photo
       await ctx.reply(
-        "📸 Photo uploaded successfully! Thank you for sharing 💍"
+        "📸 Photo uploaded successfully! Thank you for sharing "
       );
 
     }
