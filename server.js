@@ -54,9 +54,9 @@ const allowedOrigins = [
   "http://localhost:5173" ,
   "https://paulandhella.newblossomequb.net",
 "http://localhost:8080"  ,
-"https://api.paulandhella.com" ,
-"https://paulandhella.com",
-"https://www.paulandhella.com"              // local dev
+"https://GasheHAILUKITESSA.inviteyours.com",
+"https://apigashe.inviteyours.com"
+
 ];
 app.use(cors({
   origin: function(origin, callback) {
@@ -82,7 +82,7 @@ app.options(/.*/, cors());
 async function initDatabase() {
 
   await pool.execute(`
-    CREATE TABLE IF NOT EXISTS rsvps2 (
+    CREATE TABLE IF NOT EXISTS rsvps_gashe (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
       attending BOOLEAN,
@@ -92,7 +92,7 @@ async function initDatabase() {
   `);
 
   await pool.execute(`
-    CREATE TABLE IF NOT EXISTS wedding_photos2 (
+    CREATE TABLE IF NOT EXISTS wedding_photos_gashe (
       id INT AUTO_INCREMENT PRIMARY KEY,
       file_id VARCHAR(255) UNIQUE,
       image_url TEXT NOT NULL,
@@ -146,7 +146,7 @@ app.post("/api/rsvp", async (req, res) => {
 
     await pool.execute(
       `
-      INSERT INTO rsvps2
+      INSERT INTO rsvps_gashe
       (name, attending, wish)
       VALUES (?, ?, ?)
       `,
@@ -180,7 +180,7 @@ app.get("/api/rsvp", async (req, res) => {
     const [rows] =
       await pool.execute(`
         SELECT name, wish
-        FROM rsvps2
+        FROM rsvps_gashe
         ORDER BY created_at DESC
       `);
 
@@ -213,7 +213,7 @@ app.get("/api/wedding-photos", async (req, res) => {
     const [rows] =
       await pool.execute(`
         SELECT image_url, sender, timestamp
-        FROM wedding_photos2
+        FROM wedding_photos_gashe
         ORDER BY timestamp DESC
       `);
 
@@ -317,7 +317,7 @@ bot.on("photo", async (ctx) => {
     // Save to DB
     await pool.execute(
       `
-      INSERT IGNORE INTO wedding_photos2
+      INSERT IGNORE INTO wedding_photos_gashe
       (file_id, image_url, sender)
       VALUES (?, ?, ?)
       `,
