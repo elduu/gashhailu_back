@@ -54,7 +54,7 @@ const allowedOrigins = [
   "http://localhost:5173" ,
   "https://paulandhella.newblossomequb.net",
 "http://localhost:8080"  ,
-"https://gashehailukitessa.inviteyours.com/",
+"https://gashehailukitessa.inviteyours.com",
 "https://apigashe.inviteyours.com"
 
 ];
