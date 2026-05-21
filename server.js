@@ -15,7 +15,7 @@ const streamifier = require("streamifier");
 // ENV
 // =========================
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 // =========================
@@ -50,11 +50,14 @@ app.use(helmet());
 app.use(compression());
 app.use(express.json());
 const allowedOrigins = [
- 
-"http://localhost:8080"  ,
-"https://gashehailukitessa.inviteyours.com",
-"https://apigashe.inviteyours.com"
+  "https://weddinginvitation.newblossomequb.net", // correct frontend domain
+  "http://localhost:5173" ,
 
+"https://apigashe.inviteyours.com" ,
+"https://gashehailukitessa.inviteyours.com",
+"https://rsvp.inviteyours.com"
+
+              // local dev
 ];
 app.use(cors({
   origin: function(origin, callback) {
@@ -90,7 +93,7 @@ async function initDatabase() {
   `);
 
   await pool.execute(`
-    CREATE TABLE IF NOT EXISTS wedding_photos_gashe (
+    CREATE TABLE IF NOT EXISTS wedding_photos_gashe(
       id INT AUTO_INCREMENT PRIMARY KEY,
       file_id VARCHAR(255) UNIQUE,
       image_url TEXT NOT NULL,
@@ -98,6 +101,15 @@ async function initDatabase() {
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  
+  await pool.execute(`
+  CREATE TABLE IF NOT EXISTS visitors_gashe (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip VARCHAR(255),
+    user_agent TEXT,
+    visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
   console.log("Database Ready");
 
@@ -203,7 +215,53 @@ app.get("/api/rsvp", async (req, res) => {
 // =========================
 // Photo API
 // =========================
+app.get("/api/admin/rsvps", async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT 
+        name,
+        attending,
+        wish,
+        created_at
+      FROM rsvps_gashe
+      ORDER BY created_at DESC
+    `);
 
+    const formatted = rows.map(r => ({
+      name: r.name,
+      attending:
+        r.attending === 1 ? "Yes" :
+        r.attending === 0 ? "No" : "Not specified",
+      wish: r.wish,
+      created_at: r.created_at
+    }));
+
+    res.json({
+      total: formatted.length,
+      data: formatted
+    });
+
+  } catch (err) {
+    console.error("Admin RSVP Error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+});
+
+app.get("/api/admin/unique-visitors", async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT COUNT(DISTINCT ip) as total FROM visitors_gashe
+    `);
+
+    res.json({
+      unique_visitors: rows[0].total
+    });
+
+  } catch (err) {
+    console.error("Unique visitor error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+});
 app.get("/api/wedding-photos", async (req, res) => {
 
   try {
@@ -231,6 +289,38 @@ app.get("/api/wedding-photos", async (req, res) => {
 
   }
 
+});
+
+app.use(async (req, res, next) => {
+  try {
+    const origin = req.headers.origin;
+
+    // ONLY count this domain
+    const allowedSite = "https://gashehailukitessa.inviteyours.com";
+
+    if (origin !== allowedSite) {
+      return next(); // ignore everything else
+    }
+
+    const ip =
+      req.headers["x-forwarded-for"] ||
+      req.socket.remoteAddress;
+
+    const userAgent = req.headers["user-agent"];
+
+    await pool.execute(
+      `
+      INSERT INTO visitors_gashe (ip, user_agent)
+      VALUES (?, ?)
+      `,
+      [ip, userAgent]
+    );
+
+  } catch (err) {
+    console.error("Visitor log error:", err);
+  }
+
+  next();
 });
 
 // =========================
